@@ -3,7 +3,9 @@ package broker
 import (
 	"bufio"
 	"net"
+	"os"
 	"sync"
+	"time"
 )
 
 var topics = sync.Map{}
@@ -47,4 +49,29 @@ func Process(conn net.Conn) {
 	}
 
 	conn.Write(MsgToBytes(res))
+}
+
+func Save() {
+	ticker := time.NewTicker(60)
+	for {
+		select {
+		case <-ticker.C:
+			topics.Range(func(key, value interface{}) bool {
+				if value == nil {
+					return false
+				}
+				file, _ := os.Open(key.(string))
+				if file == nil {
+					file, _ = os.Create(key.(string))
+				}
+				for msg := value.(*Queue).data.Front(); msg != nil; msg = msg.Next() {
+					file.Write(MsgToBytes(msg.Value.(Msg)))
+				}
+				file.Close()
+				return false
+			})
+		default:
+			time.Sleep(1)
+		}
+	}
 }
