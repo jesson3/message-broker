@@ -71,7 +71,7 @@ func Save() {
 				return false
 			})
 		default:
-			time.Sleep(1)
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
